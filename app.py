@@ -379,7 +379,8 @@ import logging
 from datetime import timedelta
 
 import google.generativeai as genai
-from vercel_blob import Blob
+from vercel_blob import upload, download, list_files
+
 
 app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "replace_secret")
@@ -400,28 +401,26 @@ INTERVIEW_TREE_FILE = "interview_tree.json"
 
 # ---------------------- BLOB HELPERS -------------------------
 
-def blob_exists(path):
-    """Check if blob file exists."""
-    files = blob.list(prefix=path).get("blobs", [])
-    return len(files) > 0
+def blob_list(prefix):
+    return list_files(prefix=prefix)
+
 
 
 def blob_read_json(path):
-    """Read JSON file from blob."""
     try:
-        file = blob.get(path)
+        file = download(path)
         return json.loads(file.read().decode())
-    except Exception:
+    except:
         return {}
 
 
 def blob_write_json(path, data):
-    """Write JSON file to blob."""
-    blob.put(
-        pathname=path,
-        data=json.dumps(data),
+    upload(
+        path,
+        json.dumps(data).encode("utf-8"),
         content_type="application/json"
     )
+
 
 
 # ---------------------- USERS ---------------------------
