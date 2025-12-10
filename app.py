@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, session, redirect, url_for, flash
-from flask_session import Session
+#from flask_session import Session
 import requests
 import json
 import google.generativeai as genai
@@ -12,7 +12,7 @@ app.secret_key = '12000'
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './flask_session'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
-Session(app)
+#Session(app)
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
