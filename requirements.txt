@@ -1,8 +1,4 @@
 flask
 gunicorn
 requests
-json
 google.generativeai
-time
-os
-timedelta
