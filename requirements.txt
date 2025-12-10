@@ -3,3 +3,4 @@ flask
 gunicorn
 requests
 google.generativeai
+vercel-blob
