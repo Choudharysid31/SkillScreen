@@ -368,6 +368,9 @@
 # Fully compatible with Vercel (no filesystem writes)
 # Stores users + feedback in Blob as JSON files
 
+# app.py (Correct Blob Version for Vercel Python)
+# Fully compatible with Vercel Blob Storage
+
 from flask import Flask, render_template, request, session, redirect, url_for, flash
 import json
 import os
@@ -376,94 +379,95 @@ import logging
 from datetime import timedelta
 
 import google.generativeai as genai
-from vercel_blob import put, get, list as blob_list
+from vercel_blob import Blob
 
 app = Flask(__name__)
-app.secret_key = os.getenv("FLASK_SECRET_KEY", "replace_me")
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "replace_secret")
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Gemini configuration
+# Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 model = genai.GenerativeModel("gemini-1.5-flash")
+
+# Blob client
+blob = Blob()
 
 INTERVIEW_TREE_FILE = "interview_tree.json"
 
 
-# ---------------------- BLOB STORAGE HELPERS --------------------------
+# ---------------------- BLOB HELPERS -------------------------
 
 def blob_exists(path):
-    """Check whether a blob file exists."""
-    files = blob_list(prefix=path)
-    return len(files.get("blobs", [])) > 0
+    """Check if blob file exists."""
+    files = blob.list(prefix=path).get("blobs", [])
+    return len(files) > 0
 
 
 def blob_read_json(path):
-    """Read JSON from blob, return dict or {}"""
+    """Read JSON file from blob."""
     try:
-        file = get(path)
+        file = blob.get(path)
         return json.loads(file.read().decode())
     except Exception:
         return {}
 
 
 def blob_write_json(path, data):
-    """Write JSON to blob storage."""
-    put(path, json.dumps(data), content_type="application/json")
+    """Write JSON file to blob."""
+    blob.put(
+        pathname=path,
+        data=json.dumps(data),
+        content_type="application/json"
+    )
 
 
-# ---------------------- USER STORAGE --------------------------
+# ---------------------- USERS ---------------------------
 
 def load_users():
-    """Load users.json from Blob."""
     return blob_read_json("users.json") or {}
 
 
 def save_users(users):
-    """Write updated users to Blob."""
     blob_write_json("users.json", users)
 
 
-# ---------------------- FEEDBACK STORAGE --------------------------
+# ---------------------- FEEDBACK -------------------------
 
-def save_feedback(username, feedback_data):
-    timestamp = int(time.time())
-    path = f"feedback/{username}/{timestamp}.json"
-    blob_write_json(path, feedback_data)
+def save_feedback(username, data):
+    ts = int(time.time())
+    path = f"feedback/{username}/{ts}.json"
 
-    # Also save a "latest" pointer for faster access
-    blob_write_json(f"feedback/{username}/latest.json", feedback_data)
+    blob_write_json(path, data)
+
+    # Update latest pointer
+    blob_write_json(f"feedback/{username}/latest.json", data)
 
     return path
 
 
 def load_feedback(username):
-    """Load latest feedback for the user."""
-    latest_path = f"feedback/{username}/latest.json"
+    latest = f"feedback/{username}/latest.json"
+    if blob_exists(latest):
+        return blob_read_json(latest)
 
-    if blob_exists(latest_path):
-        return blob_read_json(latest_path)
-
-    # fallback: find latest file manually
-    files = blob_list(prefix=f"feedback/{username}/")
-    blobs = files.get("blobs", [])
-
-    if not blobs:
+    # fallback
+    files = blob.list(prefix=f"feedback/{username}/").get("blobs", [])
+    if not files:
         return None
 
-    # pick file with largest timestamp
-    latest = max(blobs, key=lambda x: x["pathname"])
-    return blob_read_json(latest["pathname"])
+    # pick highest timestamp filename
+    latest_file = max(files, key=lambda x: x["pathname"])
+    return blob_read_json(latest_file["pathname"])
 
 
-# ---------------------- LOAD INTERVIEW TREE --------------------------
+# ---------------------- INTERVIEW TREE -------------------------
 
 def load_tree():
-    with open(INTERVIEW_TREE_FILE, "r") as f:
+    with open("interview_tree.json", "r") as f:
         return json.load(f)
-
 
 tree = load_tree()
 
@@ -472,31 +476,31 @@ def find_node(node_id):
     return next((n for n in tree["nodes"] if n["nodeId"] == node_id), None)
 
 
-# ---------------------- GEMINI EVALUATION --------------------------
+# ---------------------- GEMINI EVALUATION -------------------------
 
 def evaluate_all_answers(conversation):
     if not conversation:
         return [], 0
 
-    total_score = 0
+    items = []
+    total = 0
     cnt = 0
-    results = []
 
     for item in conversation:
-        if item["type"] in ["info", "verification"]:
+        if item["type"] in ("info", "verification"):
             continue
 
         prompt = f"""
-Analyze this technical interview response as a lenient interviewer:
-Question: {item.get('question')}
-Answer: {item.get('answer')}
+Analyze this interview response leniently:
+Question: {item['question']}
+Answer: {item['answer']}
 
 Return JSON:
 {{
-   "score": 1-10,
-   "brief_feedback": "...",
-   "strengths": [],
-   "improvements": []
+ "score": 1-10,
+ "brief_feedback": "...",
+ "strengths": [],
+ "improvements": []
 }}
 """
 
@@ -508,65 +512,64 @@ Return JSON:
                 text = text.replace("```json", "").replace("```", "").strip()
 
             data = json.loads(text)
+            score = max(1, min(10, int(data.get("score", 7))))
 
-            score = max(1, min(10, int(data.get("score", 10))))
-
-            result = {
-                "question": item.get("question"),
-                "answer": item.get("answer"),
+            items.append({
+                "question": item["question"],
+                "answer": item["answer"],
                 "score": score,
                 "brief_feedback": data.get("brief_feedback", ""),
                 "strengths": data.get("strengths", []),
                 "improvements": data.get("improvements", [])
-            }
+            })
 
-            results.append(result)
-            total_score += score
+            total += score
             cnt += 1
 
         except Exception as e:
             logger.error("Evaluation error: %s", e)
-            results.append({
-                "question": item.get("question"),
-                "answer": item.get("answer"),
+            items.append({
+                "question": item["question"],
+                "answer": item["answer"],
                 "score": 7,
-                "brief_feedback": "Could not evaluate",
+                "brief_feedback": "Evaluation unavailable",
                 "strengths": [],
                 "improvements": []
             })
-            total_score += 7
+            total += 7
             cnt += 1
 
-    return results, (total_score / cnt if cnt else 0)
+    avg = total / cnt if cnt else 0
+    return items, avg
 
 
 def generate_verdict(score, duration, count):
     if duration < 5:
-        return {"verdict": "NOT SELECTED", "reason": "Interview too short", "color": "red"}
+        return {"verdict": "NOT SELECTED", "color": "red", "reason": "Interview too short"}
     if count < 3:
-        return {"verdict": "NOT SELECTED", "reason": "Too few questions", "color": "red"}
+        return {"verdict": "NOT SELECTED", "color": "red", "reason": "Too few answers"}
     if score >= 8:
-        return {"verdict": "SELECTED", "reason": "Excellent", "color": "green"}
+        return {"verdict": "SELECTED", "color": "green", "reason": "Excellent performance"}
     if score >= 6:
-        return {"verdict": "CONSIDER", "reason": "Good", "color": "yellow"}
+        return {"verdict": "CONSIDER", "color": "yellow", "reason": "Good performance"}
     if score >= 4:
-        return {"verdict": "MARGINAL", "reason": "Below average", "color": "orange"}
-    return {"verdict": "NOT SELECTED", "reason": "Poor performance", "color": "red"}
+        return {"verdict": "MARGINAL", "color": "orange", "reason": "Below average"}
+    return {"verdict": "NOT SELECTED", "color": "red", "reason": "Poor performance"}
 
 
-# ---------------------- AUTH ROUTES --------------------------
+# ---------------------- AUTH ROUTES -------------------------
 
 @app.route("/", methods=["GET", "POST"])
 def login():
     users = load_users()
 
     if request.method == "POST":
-        u = request.form["username"]
-        p = request.form["password"]
+        user = request.form["username"]
+        pwd = request.form["password"]
 
-        if u in users and users[u] == p:
+        if user in users and users[user] == pwd:
             session.clear()
-            session["username"] = u
+            session["username"] = user
             session["current_node"] = "root"
             session["start_time"] = time.time()
             return redirect(url_for("interview"))
@@ -579,52 +582,47 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        confirm = request.form["confirm_password"]
+        u = request.form["username"]
+        p = request.form["password"]
+        c = request.form["confirm_password"]
 
-        if not username or not password:
+        if not u or not p:
             return render_template("register.html", error="All fields required")
-        if password != confirm:
+        if p != c:
             return render_template("register.html", error="Passwords do not match")
-        if len(password) < 6:
+        if len(p) < 6:
             return render_template("register.html", error="Password too short")
 
         users = load_users()
-
-        if username in users:
+        if u in users:
             return render_template("register.html", error="User already exists")
 
-        users[username] = password
+        users[u] = p
         save_users(users)
 
-        flash("Registration successful!", "success")
+        flash("Registration successful", "success")
         return redirect(url_for("login"))
 
     return render_template("register.html")
 
 
-# ---------------------- INTERVIEW ROUTES --------------------------
+# ---------------------- INTERVIEW LOGIC -------------------------
 
 @app.route("/interview", methods=["GET", "POST"])
 def interview():
     if "username" not in session:
         return redirect(url_for("login"))
 
-    if session.get("interview_complete"):
-        return redirect(url_for("report"))
-
     node = find_node(session.get("current_node", "root"))
     convo = session.get("conversation", [])
 
     if request.method == "POST":
-        if request.form.get("action") == "end_interview":
+        if request.form.get("action") == "end":
             return redirect(url_for("end_interview"))
 
         ans = request.form.get("answer", "").strip()
-
         if not ans:
-            flash("Please enter an answer.", "error")
+            flash("Enter an answer", "error")
             return redirect(url_for("interview"))
 
         convo.append({
@@ -632,26 +630,20 @@ def interview():
             "question": node["prompt"],
             "answer": ans
         })
-
         session["conversation"] = convo
 
-        if "edges" in node:
+        # Branching logic
+        if "edges" in node and node["edges"]:
             try:
-                prompt = f"""
-Pick EXACTLY one of these conditions:
-{[e["condition"] for e in node["edges"]]}
+                opts = [e["condition"] for e in node["edges"]]
+                prompt = f"Pick EXACTLY one: {opts}\nBased on: {ans}"
 
-Based on: {ans} """
                 resp = model.generate_content(prompt)
-                text = resp.text.strip()
+                choice = resp.text.strip()
 
-                condition = text
-
-                chosen = next((e for e in node["edges"] if e["condition"] == condition), None)
+                chosen = next((e for e in node["edges"] if e["condition"] == choice), None)
                 session["current_node"] = chosen["targetNodeId"] if chosen else node["edges"][0]["targetNodeId"]
-
-            except Exception as e:
-                logger.error("Flow error: %s", e)
+            except Exception:
                 session["current_node"] = node["edges"][0]["targetNodeId"]
 
         return redirect(url_for("interview"))
@@ -692,7 +684,7 @@ def report():
     data = load_feedback(session["username"])
 
     if not data:
-        flash("No feedback found!", "error")
+        flash("No feedback found", "error")
         return redirect(url_for("interview"))
 
     verdict = generate_verdict(
@@ -711,5 +703,3 @@ def report():
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
