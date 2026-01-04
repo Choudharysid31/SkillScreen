@@ -1,132 +1,320 @@
+{#<!DOCTYPE html>#}
+{#<html lang="en">#}
+{#<head>#}
+{#    <meta charset="UTF-8">#}
+{#    <meta name="viewport" content="width=device-width, initial-scale=1.0">#}
+{#    <title>Register - Interview Bot</title>#}
+{#    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">#}
+{#    <style>#}
+{#        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');#}
+{#        :root {#}
+{#            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);#}
+{#            --primary: #4facfe;#}
+{#            --primary-dark: #00a1ff;#}
+{#            --secondary: #ff6b6b;#}
+{#            --text-primary: #f8f9fa;#}
+{#            --text-secondary: #e9ecef;#}
+{#            --error: #ff4d4d;#}
+{#        }#}
+{#        * {#}
+{#            box-sizing: border-box;#}
+{#            margin: 0;#}
+{#            padding: 0;#}
+{#        }#}
+{#        body {#}
+{#            font-family: 'Inter', sans-serif;#}
+{#            background: var(--bg-gradient);#}
+{#            color: var(--text-primary);#}
+{#            display: flex;#}
+{#            justify-content: center;#}
+{#            align-items: center;#}
+{#            min-height: 100vh;#}
+{#            margin: 0;#}
+{#            padding: 20px;#}
+{#            background-attachment: fixed;#}
+{#        }#}
+{#        .container {#}
+{#            background: rgba(30, 30, 30, 0.85);#}
+{#            padding: 2.5rem;#}
+{#            border-radius: 16px;#}
+{#            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);#}
+{#            text-align: center;#}
+{#            width: 100%;#}
+{#            max-width: 400px;#}
+{#            backdrop-filter: blur(12px);#}
+{#            border: 1px solid rgba(255, 255, 255, 0.1);#}
+{#        }#}
+{#        h1 {#}
+{#            margin-bottom: 1.5rem;#}
+{#            font-weight: 600;#}
+{#            font-size: 1.8rem;#}
+{#            background: linear-gradient(to right, var(--primary), var(--secondary));#}
+{#            -webkit-background-clip: text;#}
+{#            -webkit-text-fill-color: transparent;#}
+{#        }#}
+{#        .input-group {#}
+{#            position: relative;#}
+{#            margin: 15px 0;#}
+{#            text-align: left;#}
+{#        }#}
+{#        input {#}
+{#            width: 100%;#}
+{#            padding: 14px;#}
+{#            border: none;#}
+{#            border-radius: 6px;#}
+{#            font-size: 16px;#}
+{#            background: rgba(255, 255, 255, 0.1);#}
+{#            color: white;#}
+{#            outline: none;#}
+{#            transition: 0.3s;#}
+{#        }#}
+{#        input:focus {#}
+{#            border-bottom: 2px solid var(--primary);#}
+{#            box-shadow: 0 4px 10px rgba(0, 170, 255, 0.2);#}
+{#        }#}
+{#        button {#}
+{#            width: 100%;#}
+{#            padding: 14px;#}
+{#            border: none;#}
+{#            border-radius: 6px;#}
+{#            background: linear-gradient(45deg, var(--primary), var(--primary-dark));#}
+{#            color: white;#}
+{#            font-size: 16px;#}
+{#            font-weight: 600;#}
+{#            cursor: pointer;#}
+{#            transition: all 0.3s ease;#}
+{#            margin-top: 10px;#}
+{#        }#}
+{#        button:hover {#}
+{#            background: linear-gradient(45deg, var(--primary-dark), var(--primary));#}
+{#            transform: translateY(-2px);#}
+{#        }#}
+{#        .error {#}
+{#            color: var(--error);#}
+{#            font-size: 14px;#}
+{#            margin-bottom: 15px;#}
+{#        }#}
+{#        .login-link {#}
+{#            margin-top: 20px;#}
+{#            font-size: 14px;#}
+{#        }#}
+{#        .login-link a {#}
+{#            color: var(--primary);#}
+{#            text-decoration: none;#}
+{#        }#}
+{#        .login-link a:hover {#}
+{#            text-decoration: underline;#}
+{#        }#}
+{#    </style>#}
+{#</head>#}
+{#<body>#}
+{#    <div class="container">#}
+{#        <h1>Create Account</h1>#}
+{#        {% if error %}#}
+{#        <p class="error">{{ error }}</p>#}
+{#        {% endif %}#}
+{#        <form method="POST">#}
+{#            <div class="input-group">#}
+{#                <input type="text" name="username" placeholder="Username" required>#}
+{#            </div>#}
+{#            <div class="input-group">#}
+{#                <input type="password" name="password" placeholder="Password" required>#}
+{#            </div>#}
+{#            <div class="input-group">#}
+{#                <input type="password" name="confirm_password" placeholder="Confirm Password" required>#}
+{#            </div>#}
+{#            <button type="submit">Register</button>#}
+{#        </form>#}
+{#        <div class="login-link">#}
+{#            Already have an account? <a href="{{ url_for('login') }}">Login here</a>#}
+{#        </div>#}
+{#    </div>#}
+{#</body>#}
+{#</html>#}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register - Interview Bot</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <title>Register - SkillScreen Bot</title>
+    <link href="fonts.googleapis.com" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         :root {
-            --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            --primary: #4facfe;
-            --primary-dark: #00a1ff;
-            --secondary: #ff6b6b;
-            --text-primary: #f8f9fa;
-            --text-secondary: #e9ecef;
-            --error: #ff4d4d;
+            --bg-color: #05070a;
+            --card-bg: rgba(18, 20, 25, 0.7);
+            --primary: #6366f1; /* Indigo */
+            --primary-hover: #818cf8;
+            --accent: #c084fc;
+            --text-main: #ffffff;
+            --text-muted: #94a3b8;
+            --input-bg: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.08);
         }
+
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
         }
+
         body {
-            font-family: 'Inter', sans-serif;
-            background: var(--bg-gradient);
-            color: var(--text-primary);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-color);
+            background-image:
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(192, 132, 252, 0.15) 0px, transparent 50%);
+            color: var(--text-main);
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
-            margin: 0;
-            padding: 20px;
-            background-attachment: fixed;
+            overflow: hidden;
         }
+
         .container {
-            background: rgba(30, 30, 30, 0.85);
-            padding: 2.5rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
-            text-align: center;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            padding: 3rem;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
             width: 100%;
-            max-width: 400px;
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 440px;
+            animation: fadeIn 0.8s ease-out;
         }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         h1 {
-            margin-bottom: 1.5rem;
-            font-weight: 600;
-            font-size: 1.8rem;
-            background: linear-gradient(to right, var(--primary), var(--secondary));
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to right, #fff, #94a3b8);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .input-group {
-            position: relative;
-            margin: 15px 0;
-            text-align: left;
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
         }
+
+        .input-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+
         input {
             width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            background: rgba(255, 255, 255, 0.1);
+            padding: 14px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
             color: white;
-            outline: none;
-            transition: 0.3s;
+            font-size: 1rem;
+            transition: all 0.2s ease;
         }
+
         input:focus {
-            border-bottom: 2px solid var(--primary);
-            box-shadow: 0 4px 10px rgba(0, 170, 255, 0.2);
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
+
         button {
             width: 100%;
             padding: 14px;
+            border-radius: 12px;
             border: none;
-            border-radius: 6px;
-            background: linear-gradient(45deg, var(--primary), var(--primary-dark));
+            background: var(--primary);
             color: white;
-            font-size: 16px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
         }
+
         button:hover {
-            background: linear-gradient(45deg, var(--primary-dark), var(--primary));
-            transform: translateY(-2px);
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
         }
+
+        button:active {
+            transform: translateY(0);
+        }
+
         .error {
-            color: var(--error);
-            font-size: 14px;
-            margin-bottom: 15px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 1.5rem;
         }
+
         .login-link {
-            margin-top: 20px;
-            font-size: 14px;
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
         }
+
         .login-link a {
             color: var(--primary);
             text-decoration: none;
+            font-weight: 600;
         }
+
         .login-link a:hover {
-            text-decoration: underline;
+            color: var(--accent);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Create Account</h1>
+{#        <p class="subtitle">Start practicing your interviews today.</p>#}
+
         {% if error %}
-        <p class="error">{{ error }}</p>
+        <div class="error">{{ error }}</div>
         {% endif %}
+
         <form method="POST">
             <div class="input-group">
-                <input type="text" name="username" placeholder="Username" required>
+                <label>Username</label>
+                <input type="text" name="username" placeholder="johndoe" required>
             </div>
             <div class="input-group">
-                <input type="password" name="password" placeholder="Password" required>
+                <label>Password</label>
+                <input type="password" name="password" placeholder="••••••••" required>
             </div>
             <div class="input-group">
-                <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+                <label>Confirm Password</label>
+                <input type="password" name="confirm_password" placeholder="••••••••" required>
             </div>
-            <button type="submit">Register</button>
+            <button type="submit">Create Account</button>
         </form>
+
         <div class="login-link">
-            Already have an account? <a href="{{ url_for('login') }}">Login here</a>
+            Already have an account? <a href="{{ url_for('login') }}">Log In</a>
         </div>
     </div>
 </body>
